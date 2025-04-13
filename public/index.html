@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI vs Organic Similarity Analyzer</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #0d6efd; /* Bootstrap Blue */
+      --primary-hover: #0b5ed7;
+      --light-bg: #f8f9fa;
+      --white: #ffffff;
+      --border-color: #dee2e6;
+      --text-color: #212529;
+      --text-muted: #6c757d;
+      --success-color: #198754;
+      --warning-color: #ffc107;
+      --danger-color: #dc3545;
+      --border-radius: 0.5rem; /* 8px */
+      --box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--light-bg);
+      margin: 0;
+      padding: 20px;
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 30px 40px;
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      overflow: hidden; /* Contains background elements */
+      position: relative;
+    }
+
+    /* Subtle background graphic element */
+    .container::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, rgba(13, 110, 253, 0.05), rgba(13, 110, 253, 0));
+      border-radius: 50%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      position: relative; /* Ensure text is above pseudo-element */
+      z-index: 1;
+    }
+
+    h1 {
+      font-weight: 700;
+      color: var(--text-color);
+      font-size: 1.75rem; /* 28px */
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+     h1 .bi { /* Icon styling */
+        font-size: 1.5rem;
+        color: var(--primary-color);
+     }
+
+
+    .instructions {
+      font-size: 0.95rem; /* 15px */
+      color: var(--text-muted);
+      margin-bottom: 25px;
+    }
+
+    .input-section {
+      margin-bottom: 30px;
+      position: relative; /* Ensure content is above pseudo-element */
+      z-index: 1;
+    }
+
+    textarea {
+      width: 100%;
+      height: 140px;
+      font-size: 1rem; /* 16px */
+      padding: 12px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      resize: vertical;
+      margin-bottom: 15px;
+      box-sizing: border-box; /* Include padding and border in element's total width and height */
+      font-family: inherit;
+    }
+     textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+     }
+
+    .button-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: var(--white);
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+      display: inline-flex; /* Align icon and text */
+      align-items: center;
+      gap: 8px; /* Space between icon and text */
+    }
+
+    button:hover:not(:disabled) {
+      background-color: var(--primary-hover);
+    }
+
+    button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    button.secondary {
+        background-color: #6c757d; /* Bootstrap Secondary */
+    }
+     button.secondary:hover:not(:disabled) {
+         background-color: #5c636a;
+     }
+
+    #loading {
+      display: none; /* Hidden by default */
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 0;
+      text-align: center;
+      position: relative; /* Ensure content is above pseudo-element */
+      z-index: 1;
+    }
+
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: var(--primary-color);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #loading p {
+        font-weight: 500;
+        color: var(--text-muted);
+        font-size: 1rem;
+    }
+
+    .results-section {
+      margin-top: 40px;
+      position: relative; /* Ensure content is above pseudo-element */
+      z-index: 1;
+    }
+
+    #chart-container {
+        min-height: 100px; /* Ensure container has height even when empty */
+         background-color: #fdfdff; /* Slightly off-white background for chart area */
+        padding: 20px;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+    }
+
+    canvas {
+      max-height: 500px; /* Adjust as needed */
+       width: 100% !important; /* Ensure chart uses full width */
+    }
+
+    /* Style for potential future details section */
+    #details-output {
+        margin-top: 20px;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+        font-size: 0.85rem;
+        color: var(--text-muted);
+         position: relative; /* Ensure content is above pseudo-element */
+         z-index: 1;
+    }
+
+    a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="bi bi-search-heart"></i> AI vs Organic Analyzer</h1>
+      <p class="instructions">
+        Enter Google search queries (one per line) to compare AI Overview links against the Top 3 organic results.
+      </p>
+    </header>
+
+    <main>
+      <section class="input-section">
+        <textarea id="queryBox" placeholder="e.g.&#10;best electric cars 2025&#10;how to make sourdough bread&#10;python for data analysis"></textarea>
+        <div class="button-group">
+            <button id="analyzeButton" onclick="submitQueries()">
+                <i class="bi bi-bar-chart-line-fill"></i> Analyze Queries
+            </button>
+             <button id="clearButton" class="secondary" onclick="clearInput()">
+                <i class="bi bi-x-lg"></i> Clear
+            </button>
+        </div>
+      </section>
+
+      <section class="results-section">
+        <div id="loading">
+          <div class="spinner"></div>
+          <p>Analyzing queries... Please wait.</p>
+        </div>
+
+        <div id="chart-container" style="display: none;"> <canvas id="chart"></canvas>
+        </div>
+
+        <div id="details-output"></div>
+      </section>
+    </main>
+
+    <footer>
+      Powered by <a href="https://serpapi.com" target="_blank" rel="noopener noreferrer">SerpApi</a> | Chart by <a href="https://www.chartjs.org/" target="_blank" rel="noopener noreferrer">Chart.js</a>
+    </footer>
+
+  </div>
+
+  <script>
+    const analyzeButton = document.getElementById('analyzeButton');
+    const clearButton = document.getElementById('clearButton');
+    const queryBox = document.getElementById('queryBox');
+    const loadingDiv = document.getElementById('loading');
+    const chartContainer = document.getElementById('chart-container');
+    const detailsOutput = document.getElementById('details-output');
+    const chartCanvas = document.getElementById('chart');
+    let chartInstance = null; // To store the chart instance
+
+    function clearInput() {
+        queryBox.value = '';
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+        chartContainer.style.display = 'none'; // Hide chart
+        detailsOutput.innerHTML = ''; // Clear details
+        analyzeButton.disabled = false; // Re-enable button if it was disabled
+    }
+
+    async function submitQueries() {
+      const raw = queryBox.value;
+      const queries = raw.split('\n').map(q => q.trim()).filter(Boolean);
+      if (!queries.length) {
+        alert('Please enter at least one query.');
+        return;
+      }
+
+      // --- Update UI for loading state ---
+      analyzeButton.disabled = true;
+      analyzeButton.innerHTML = `<i class="bi bi-hourglass-split"></i> Analyzing...`; // Change button text/icon
+      clearButton.disabled = true;
+      loadingDiv.style.display = 'flex'; // Use flex to center spinner/text
+      chartContainer.style.display = 'none'; // Hide previous chart
+      if (chartInstance) {
+        chartInstance.destroy(); // Destroy old chart if exists
+        chartInstance = null;
+      }
+      detailsOutput.innerHTML = ''; // Clear previous details
+
+      try {
+        const response = await fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queries })
+        });
+
+        if (!response.ok) {
+            // Handle HTTP errors like 4xx, 5xx
+            const errorData = await response.json().catch(() => ({})); // Try to parse error JSON, default to empty obj
+            throw new Error(`Server responded with ${response.status}: ${errorData.error || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Response from server:', data);
+
+        if (data && data.length > 0) {
+            displayResults(data);
+        } else {
+            detailsOutput.textContent = 'No results returned from the server.';
+        }
+
+      } catch (err) {
+        console.error('Error during analysis:', err);
+        detailsOutput.textContent = `An error occurred: ${err.message}`; // Show error message
+        alert('Something went wrong: ' + err.message); // Keep alert for immediate feedback too
+      } finally {
+        // --- Restore UI from loading state ---
+        loadingDiv.style.display = 'none';
+        analyzeButton.disabled = false;
+        analyzeButton.innerHTML = `<i class="bi bi-bar-chart-line-fill"></i> Analyze Queries`; // Restore button
+        clearButton.disabled = false;
+      }
+    }
+
+    function displayResults(data) {
+        const labels = data.map(d => d.query);
+        const values = data.map(d => d.similarity_score !== null ? d.similarity_score : 0); // Handle potential null scores
+        // Define colors based on score ranges
+        const bgColors = values.map(score => {
+            if (score >= 67) return 'rgba(25, 135, 84, 0.7)';   // Success shade (Bootstrap success)
+            if (score >= 34) return 'rgba(255, 193, 7, 0.7)';    // Warning shade (Bootstrap warning)
+            return 'rgba(220, 53, 69, 0.7)';     // Danger shade (Bootstrap danger)
+        });
+         const borderColors = values.map(score => {
+            if (score >= 67) return 'rgba(25, 135, 84, 1)';
+            if (score >= 34) return 'rgba(255, 193, 7, 1)';
+            return 'rgba(220, 53, 69, 1)';
+        });
+
+
+        const ctx = chartCanvas.getContext('2d');
+        chartContainer.style.display = 'block'; // Show the chart container
+
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Similarity Score',
+              data: values,
+              backgroundColor: bgColors,
+              borderColor: borderColors,
+              borderWidth: 1,
+              borderRadius: 5,
+              borderSkipped: false, // Apply radius to all corners
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false, // Allow chart to resize height based on labels
+            indexAxis: 'y', // Horizontal bars
+            scales: {
+              x: {
+                beginAtZero: true,
+                max: 100,
+                title: {
+                  display: true,
+                  text: 'Similarity Score (%)',
+                  font: { size: 14 }
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)' // Lighter grid lines
+                }
+              },
+              y: {
+                 grid: {
+                    display: false // Hide Y-axis grid lines
+                 }
+              }
+            },
+            plugins: {
+              legend: {
+                display: false // Hide legend as it's obvious
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleFont: { size: 14 },
+                bodyFont: { size: 12 },
+                padding: 10,
+                cornerRadius: 4,
+                callbacks: {
+                    // You can add more details to the tooltip here using the 'data' array
+                    // Example: Find the full data object for the current tooltip item
+                    label: function(context) {
+                        const index = context.dataIndex;
+                        const score = context.raw;
+                        const currentData = data[index]; // Get the full result object
+                        let label = ` Similarity: ${score}%`;
+                        if (currentData) {
+                           label += ` | AI Status: ${currentData.ai_status || 'N/A'}`;
+                           // You could add more like: `| Found AI: ${currentData.has_ai}`
+                        }
+                        return label;
+                    }
+                }
+              }
+            }
+          }
+        });
+
+         // Optional: Add summary text or allow showing details
+         // detailsOutput.innerHTML = `Analyzed ${data.length} queries. Hover over bars for details.`;
+    }
+  </script>
+</body>
+</html>
