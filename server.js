@@ -6,21 +6,21 @@ const { getJson } = require('serpapi');
 const app = express();
 const PORT = 3001;
 
-// ✅ Pull the SerpAPI key from your Render Environment Variables
+// ✅ Securely load SerpAPI key from environment
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
-console.log('🔐 SERPAPI_KEY from env:', SERPAPI_KEY?.slice(0, 6), '...');  // partial only for security
+console.log('🔐 SERPAPI_KEY loaded:', SERPAPI_KEY?.slice(0, 6), '...');
 
 if (!SERPAPI_KEY) {
-  console.error('❌ SERPAPI_KEY is not defined in environment variables');
-  process.exit(1); // Stop server if key is missing
+  console.error('❌ SERPAPI_KEY is missing in environment variables!');
+  process.exit(1);
 }
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Normalize URL to domain for scoring
-const normalizeURL = url => {
+// 🔁 Normalize domain for similarity comparison
+const normalizeURL = (url) => {
   try {
     const u = new URL(url);
     return u.hostname.replace(/^www\./, '');
@@ -35,69 +35,55 @@ app.post('/analyze', async (req, res) => {
 
   for (const query of queries) {
     try {
-      console.log(`🔍 Analyzing query: "${query}"`);
+      console.log(`🔍 Processing: "${query}"`);
 
-      // Build SerpAPI search parameters
-const data = await new Promise((resolve, reject) => {
-  getJson({
-    engine: 'google',
-    q: query,
-    api_key: SERPAPI_KEY,         // ✅ ✅ ✅ THIS IS WHAT WAS MISSING
-    hl: 'en',
-    gl: 'us',
-    device: 'desktop',
-    num: 10,
-    no_cache: true
-  }, (json) => {
-    if (json.error) return reject(new Error(json.error));
-    resolve(json);
-  });
-});
-
-      // Wrap getJson in a Promise to use with async/await
-      const data = await new Promise((resolve, reject) => {
-        getJson(params, json => {
-          if (json.error) {
-            reject(new Error(json.error));
-          } else {
-            resolve(json);
-          }
+      const serpapiData = await new Promise((resolve, reject) => {
+        getJson({
+          engine: 'google',
+          q: query,
+          api_key: SERPAPI_KEY,
+          hl: 'en',
+          gl: 'in',
+          device: 'desktop',
+          num: 10,
+          no_cache: true
+        }, (json) => {
+          if (json.error) return reject(new Error(json.error));
+          resolve(json);
         });
       });
 
-      // Extract AI Overview source links
       const aiLinks = [];
-      if (data?.ai_overview?.source_links) {
-        aiLinks.push(
-          ...data.ai_overview.source_links.map(link => ({
-            text: link.title || '',
-            href: link.link
-          }))
-        );
+
+      // Extract AI Overview links (official)
+      if (serpapiData?.ai_overview?.source_links) {
+        aiLinks.push(...serpapiData.ai_overview.source_links.map(link => ({
+          text: link.title || '',
+          href: link.link
+        })));
       }
 
-      // Extract top 3 organic search links
-      const top3Organic = (data.organic_results || [])
+      // Extract organic results (top 3)
+      const top3Organic = (serpapiData.organic_results || [])
         .slice(0, 3)
         .map(result => result.link);
 
-      // Normalize and calculate similarity score
+      // Calculate domain overlap
       const aiDomains = aiLinks.map(link => normalizeURL(link.href));
       const orgDomains = top3Organic.map(link => normalizeURL(link));
-
       const matches = orgDomains.filter(domain => aiDomains.includes(domain));
       const similarity_score = Math.round((matches.length / 3) * 100);
 
       results.push({
         query,
         similarity_score,
-        has_ai: !!data.ai_overview,
+        has_ai: !!serpapiData.ai_overview,
         top_3_organic: top3Organic,
         ai_overview_links: aiLinks
       });
 
     } catch (err) {
-      console.error(`❌ Failed to process "${query}":`, err.message);
+      console.error(`❌ Error for "${query}":`, err.message);
       results.push({
         query,
         similarity_score: 0,
@@ -112,7 +98,7 @@ const data = await new Promise((resolve, reject) => {
   res.json(results);
 });
 
-// Serve frontend
+// Serve the frontend (from /public)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
