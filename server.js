@@ -33,9 +33,23 @@ app.post('/analyze', async (req, res) => {
   const queries = req.body.queries || [];
   const results = [];
 
+  console.log(`Processing ${queries.length} queries.`); // Optional: Log how many queries received
+
   for (const query of queries) {
     try {
       console.log(`🔍 Analyzing: "${query}"`);
+
+      // --- ADD THIS LOGGING ---
+      console.log(`🔑 Checking SERPAPI_KEY before API call. Length: ${SERPAPI_KEY ? SERPAPI_KEY.length : 'undefined/null'}`);
+      // Log the key itself, but be mindful if logs are public. Brackets help see whitespace.
+      // Consider removing this log line after debugging if logs are sensitive.
+      console.log(`🔑 Using Key Value: [${SERPAPI_KEY}]`);
+      // --- END OF ADDED LOGGING ---
+
+      if (!SERPAPI_KEY) {
+         // Add an extra check here just in case
+         console.error('❌ SERPAPI_KEY became undefined/empty before API call!');
+         throw new Error('Internal Server Error: API Key missing unexpectedly.');
 
       const params = {
         engine: 'google',
