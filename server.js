@@ -38,16 +38,21 @@ app.post('/analyze', async (req, res) => {
       console.log(`🔍 Analyzing query: "${query}"`);
 
       // Build SerpAPI search parameters
-      const params = {
-        engine: 'google',
-        q: query,
-        api_key: SERPAPI_KEY,
-        hl: 'en',
-        gl: 'in',
-        num: 10,
-        device: 'desktop',
-        no_cache: true
-      };
+const data = await new Promise((resolve, reject) => {
+  getJson({
+    engine: 'google',
+    q: query,
+    api_key: SERPAPI_KEY,         // ✅ ✅ ✅ THIS IS WHAT WAS MISSING
+    hl: 'en',
+    gl: 'us',
+    device: 'desktop',
+    num: 10,
+    no_cache: true
+  }, (json) => {
+    if (json.error) return reject(new Error(json.error));
+    resolve(json);
+  });
+});
 
       // Wrap getJson in a Promise to use with async/await
       const data = await new Promise((resolve, reject) => {
