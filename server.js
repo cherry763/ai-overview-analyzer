@@ -40,7 +40,7 @@ app.post('/analyze', async (req, res) => {
       const params = {
         engine: 'google',
         q: query,
-        api_key: 55de22305f6255c1be524fa3d052caa40724000e7233fe825f8942090a4a3cff,
+        api_key: SERPAPI_KEY,
         hl: 'en',
         gl: 'in',
         num: 10,
