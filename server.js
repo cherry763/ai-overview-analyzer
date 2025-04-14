@@ -8,6 +8,7 @@ const PORT = 3001;
 
 // ✅ Pull the SerpAPI key from your Render Environment Variables
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
+console.log('🔐 SERPAPI_KEY from env:', SERPAPI_KEY?.slice(0, 6), '...');  // partial only for security
 
 if (!SERPAPI_KEY) {
   console.error('❌ SERPAPI_KEY is not defined in environment variables');
