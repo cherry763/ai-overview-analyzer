@@ -10,7 +10,7 @@ const PORT = 3001;
 // 🔐 IMPORTANT: Replace with your actual SerpAPI key
 // It's highly recommended to use environment variables for API keys
 // Example: const SERPAPI_KEY = process.env.SERPAPI_KEY;
-const SERPAPI_KEY = process.env.SERPAPI_KEY;// --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+const SERPAPI_KEY = process.env.55de22305f6255c1be524fa3d052caa40724000e7233fe825f8942090a4a3cff;// --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
 if (SERPAPI_KEY === '55de22305f6255c1be524fa3d052caa40724000e7233fe825f8942090a4a3cff') {
   console.warn("⚠️ WARNING: Using placeholder SerpAPI Key. Please replace 'YOUR_SERPAPI_API_KEY' with your actual key.");
